@@ -1,0 +1,70 @@
+import { ImageGenerationRequest, VideoGenerationRequest, ImageProvider, VideoProvider } from './types'
+import { localMockProvider } from './providers/local-mock'
+
+// Provider configuration from environment
+const AI_PROVIDER = process.env.AI_PROVIDER || 'image:mock,video:mock'
+
+class AIService {
+  private imageProvider: ImageProvider
+  private videoProvider: VideoProvider
+
+  constructor() {
+    const config = this.parseProviderConfig(AI_PROVIDER)
+    
+    // Initialize image provider
+    switch (config.image) {
+      case 'openai':
+        // TODO: Implement OpenAI provider
+        this.imageProvider = localMockProvider
+        break
+      case 'mock':
+      default:
+        this.imageProvider = localMockProvider
+        break
+    }
+
+    // Initialize video provider
+    switch (config.video) {
+      case 'replicate':
+        // TODO: Implement Replicate provider
+        this.videoProvider = localMockProvider
+        break
+      case 'mock':
+      default:
+        this.videoProvider = localMockProvider
+        break
+    }
+  }
+
+  private parseProviderConfig(configString: string) {
+    const config = { image: 'mock', video: 'mock' }
+    
+    configString.split(',').forEach(pair => {
+      const [type, provider] = pair.split(':')
+      if (type === 'image') config.image = provider
+      if (type === 'video') config.video = provider
+    })
+
+    return config
+  }
+
+  async generateImage(request: ImageGenerationRequest) {
+    try {
+      return await this.imageProvider.generateImage(request)
+    } catch (error) {
+      console.error('Image generation failed, falling back to mock:', error)
+      return await localMockProvider.generateImage(request)
+    }
+  }
+
+  async generateVideo(request: VideoGenerationRequest) {
+    try {
+      return await this.videoProvider.generateVideo(request)
+    } catch (error) {
+      console.error('Video generation failed, falling back to mock:', error)
+      return await localMockProvider.generateVideo(request)
+    }
+  }
+}
+
+export const aiService = new AIService()
